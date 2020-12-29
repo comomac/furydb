@@ -14,7 +14,7 @@ type FuryDriver struct {
 
 // FuryConn sql connection
 type FuryConn struct {
-	name string
+	db *Database
 }
 
 func init() {
@@ -23,13 +23,24 @@ func init() {
 }
 
 // Open database
-func (d *FuryDriver) Open(name string) (driver.Conn, error) {
-	file, err := os.Open(name)
+func (d *FuryDriver) Open(folderPath string) (driver.Conn, error) {
+	filePath := folderPath + "/schema"
+
+	// file not exist -> new
+	_, err := os.Stat(filePath)
+	if err != nil && os.IsNotExist(err) {
+
+	} else if err != nil {
+		return nil, err
+	}
+
+	// load file
+	db, err := Load(folderPath)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
-	return &FuryConn{name: name}, nil
+
+	return &FuryConn{db: db}, nil
 }
 
 // Query the database

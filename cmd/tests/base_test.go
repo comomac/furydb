@@ -9,7 +9,7 @@ import (
 	"github.com/comomac/furydb"
 )
 
-// TestCreate db
+// TestCreate db, written this before the parser is made
 func TestCreate(t *testing.T) {
 	db, err := furydb.Create("tmp-db", "testme")
 	if err != nil {
@@ -129,57 +129,71 @@ func TestCreate(t *testing.T) {
 	}
 }
 
-// TestLoad db
-func TestLoad(t *testing.T) {
-	db, err := furydb.Load("tmp-db")
-	if err != nil {
-		t.Error(err)
-	}
+// // TestLoad db
+// func TestLoad(t *testing.T) {
+// 	db, err := furydb.Load("tmp-db")
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
 
-	if db.Name != "testme" {
-		t.Error(fmt.Errorf("name mismatch"))
-	}
-	if db.Tables == nil {
-		t.Error(fmt.Errorf("tables is nil"))
-	}
-	if len(db.Tables) == 0 {
-		t.Error(fmt.Errorf("tables is zero len"))
-	}
-}
+// 	if db.Name != "testme" {
+// 		t.Error(fmt.Errorf("name mismatch"))
+// 	}
+// 	if db.Tables == nil {
+// 		t.Error(fmt.Errorf("tables is nil"))
+// 	}
+// 	if len(db.Tables) == 0 {
+// 		t.Error(fmt.Errorf("tables is zero len"))
+// 	}
+// }
+
+var db *sql.DB
 
 // TestSqlDriverOpen
 func TestSqlDriverOpen(t *testing.T) {
-	_, err := sql.Open("fury", "tmp-db")
+	var err error
+	_, err = sql.Open("fury", "tmp-db")
 	if err != nil {
 		t.Error(err)
+		return
 	}
+}
 
+// TestSqlDriverTableCreate
+func TestSqlDriverTableCreate(t *testing.T) {
+	if db == nil {
+		t.Error(fmt.Errorf("db not loaded"))
+		return
+	}
 }
 
 // TestSqlDriverInsert
 func TestSqlDriverInsert(t *testing.T) {
-	db, err := sql.Open("fury", "tmp-db")
-	if err != nil {
-		t.Error(err)
+	var err error
+	if db == nil {
+		t.Error(fmt.Errorf("db not loaded"))
+		return
 	}
 
 	query := `
 	INSERT INTO users (email,password)
-	VALUES ('2d66e446-f7b4-4712-ad81-a5835a867bb3','bob@example.com','testpass');
+	VALUES ('bob@example.com','testpass');
 	`
 
 	// run insert query
 	_, err = db.Query(query)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 }
 
 // TestSqlDriverSelect
 func TestSqlDriverSelect(t *testing.T) {
-	db, err := sql.Open("fury", "tmp-db")
-	if err != nil {
-		t.Error(err)
+	var err error
+	if db == nil {
+		t.Error(fmt.Errorf("db not loaded"))
+		return
 	}
 
 	query := `
@@ -191,6 +205,7 @@ func TestSqlDriverSelect(t *testing.T) {
 	rows, err := db.Query(query)
 	if err != nil {
 		t.Error(err)
+		return
 	}
 	defer rows.Close()
 
@@ -203,10 +218,12 @@ func TestSqlDriverSelect(t *testing.T) {
 		)
 		if err := rows.Scan(&id, &email, &password); err != nil {
 			t.Error(err)
+			return
 		}
 		log.Printf("email: %s    password: %s\n", email, password)
 	}
 	if !rows.NextResultSet() {
 		t.Error(fmt.Errorf("expected more result sets: %v", rows.Err()))
+		return
 	}
 }
