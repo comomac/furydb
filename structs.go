@@ -26,22 +26,23 @@ type Table struct {
 
 // Constraint holds table column constraint
 type Constraint struct {
-	Name              string    // name of constraint
-	Type              int       // what is the type of column
-	IsPrimaryKey      bool      // is column primary key
-	IsUnique          bool      // is column unique
-	IsNotNull         bool      // is column not null
-	IsForeignKey      bool      // is this a foreign key?
-	ForeignTable      string    // foreign key table
-	ForeignColumn     string    // foreign key column
-	UseDefaultData    bool      // does it have default value
-	DefaultDataBool   bool      // default value in type bool
-	DefaultDataInt    int       // default value in type int
-	DefaultDataFloat  float64   // default value in type float64
-	DefaultDataString string    // default value in type string
-	DefaultDataBytes  []byte    // default value in type []byte
-	DefaultDataTime   time.Time // default value in type time.Time
-	DefaultDataUUID   [16]byte  // default value in type UUID
+	Name              string     // name of constraint
+	ColumnName        string     // column name for
+	Type              ColumnType // what is the type of column
+	IsPrimaryKey      bool       // is column primary key
+	IsUnique          bool       // is column unique
+	IsNotNull         bool       // is column not null
+	IsForeignKey      bool       // is this a foreign key?
+	ForeignTable      string     // foreign key table
+	ForeignColumn     string     // foreign key column
+	UseDefaultData    bool       // does it have default value
+	DefaultDataBool   bool       // default value in type bool
+	DefaultDataInt    int        // default value in type int
+	DefaultDataFloat  float64    // default value in type float64
+	DefaultDataString string     // default value in type string
+	DefaultDataBytes  []byte     // default value in type []byte
+	DefaultDataTime   string     // default value to use, e.g. now()
+	DefaultDataUUID   string     // default value in use, e.g. gen_uuid_v4()
 }
 
 // ColumnType that dictate data type that the column value holds
@@ -49,13 +50,13 @@ type ColumnType int
 
 // various column types
 const (
-	ColumnBool   ColumnType = 1
-	ColumnInt    ColumnType = 2
-	ColumnFloat  ColumnType = 3
-	ColumnString ColumnType = 4
-	ColumnBytes  ColumnType = 5
-	ColumnTime   ColumnType = 6
-	ColumnUUID   ColumnType = 7
+	ColumnTypeBool   ColumnType = 1
+	ColumnTypeInt    ColumnType = 2
+	ColumnTypeFloat  ColumnType = 3
+	ColumnTypeString ColumnType = 4
+	ColumnTypeBytes  ColumnType = 5
+	ColumnTypeTime   ColumnType = 6
+	ColumnTypeUUID   ColumnType = 7
 )
 
 // Column holds schema of individual column, also can be use to hold data
