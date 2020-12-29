@@ -2,11 +2,17 @@ package furydb
 
 import "time"
 
+// Note:
+// Table rows are stored separately to make things easier, it may change in the future,
+// but for now, the data will just sits in the filesystem not to save memory.
+// So data recall or search are all done base on the hard drive, it will be slow on disk hdd,
+// but should be quick enough base on SSD and OS caching
+
 // Database holds schema of entire database in self contained unit
 type Database struct {
-	Name         string
-	Filepath     string
-	Tables       []Table
+	Name         string // is just a placeholder
+	Folderpath   string
+	Tables       []*Table
 	VersionMajor int
 	VersionMinor int
 }
@@ -14,8 +20,8 @@ type Database struct {
 // Table holds schema of individual table
 type Table struct {
 	Name        string
-	Columns     []Column
-	Constraints []Constraint
+	Columns     []*Column
+	Constraints []*Constraint
 }
 
 // Constraint holds table column constraint
@@ -69,7 +75,7 @@ type Column struct {
 
 // Row holds a single row of table data
 type Row struct {
-	TableName string   // name of the table row refers to
-	Data      []Column // holds column data
-	Deleted   bool     // if deleted, will be skipped during scan
+	TableName string    // name of the table row refers to
+	Data      []*Column // holds column data
+	Deleted   bool      // if deleted, will be skipped during scan
 }
