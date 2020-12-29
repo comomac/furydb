@@ -1,6 +1,12 @@
 package furydb
 
-import "time"
+import (
+	"database/sql/driver"
+	"encoding/csv"
+	"fmt"
+	"os"
+	"time"
+)
 
 // Note:
 // Table rows are stored separately to make things easier, it may change in the future,
@@ -37,7 +43,7 @@ type Constraint struct {
 	ForeignColumn     string     // foreign key column
 	UseDefaultData    bool       // does it have default value
 	DefaultDataBool   bool       // default value in type bool
-	DefaultDataInt    int        // default value in type int
+	DefaultDataInt    int64      // default value in type int64
 	DefaultDataFloat  float64    // default value in type float64
 	DefaultDataString string     // default value in type string
 	DefaultDataBytes  []byte     // default value in type []byte
@@ -79,4 +85,34 @@ type Row struct {
 	TableName string    // name of the table row refers to
 	Data      []*Column // holds column data
 	Deleted   bool      // if deleted, will be skipped during scan
+}
+
+// results implements driver.Rows
+type results struct {
+	rows    []*Row
+	file    *os.File
+	reader  *csv.Reader
+	columns []string
+}
+
+// Close implements driver.Rows
+func (r *results) Close() error {
+	return fmt.Errorf("not implemented")
+}
+
+// Columns implements driver.Rows
+func (r *results) Columns() []string {
+	return r.columns
+}
+
+// Next implements driver.Rows
+func (r *results) Next(dest []driver.Value) error {
+	d, err := r.reader.Read()
+	if err != nil {
+		return err
+	}
+	for i := 0; i != len(r.columns); i++ {
+		dest[i] = driver.Value(d[i])
+	}
+	return nil
 }
