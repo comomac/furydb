@@ -17,7 +17,7 @@ type FuryConn struct {
 	name string
 }
 
-func main() {
+func init() {
 	sql.Register("fury", &FuryDriver{})
 	fmt.Printf("Drivers=%v\n", sql.Drivers())
 }

@@ -1,10 +1,13 @@
 package furydb
 
 import (
+	"database/sql"
 	"database/sql/driver"
 	"encoding/csv"
+	"encoding/hex"
 	"fmt"
-	"os"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -46,8 +49,8 @@ type Constraint struct {
 	DefaultDataInt    int64      // default value in type int64
 	DefaultDataFloat  float64    // default value in type float64
 	DefaultDataString string     // default value in type string
-	DefaultDataBytes  []byte     // default value in type []byte
 	DefaultDataTime   string     // default value to use, e.g. now()
+	DefaultDataBytes  []byte     // default value in type []byte
 	DefaultDataUUID   string     // default value in use, e.g. gen_uuid_v4()
 }
 
@@ -60,8 +63,8 @@ const (
 	ColumnTypeInt    ColumnType = 2
 	ColumnTypeFloat  ColumnType = 3
 	ColumnTypeString ColumnType = 4
-	ColumnTypeBytes  ColumnType = 5
-	ColumnTypeTime   ColumnType = 6
+	ColumnTypeTime   ColumnType = 5
+	ColumnTypeBytes  ColumnType = 6
 	ColumnTypeUUID   ColumnType = 7
 )
 
@@ -71,33 +74,36 @@ type Column struct {
 	Type ColumnType // column data type
 
 	// anything below is used for holding data
+	DataIsNull bool      // value is null (if column is nullable)
 	DataBool   bool      // value in type bool
-	DataInt    int       // value in type int
+	DataInt    int64     // value in type int
 	DataFloat  float64   // value in type float64
 	DataString string    // value in type string
-	DataBytes  []byte    // value in type []byte
 	DataTime   time.Time // value in type time.Time
+	DataBytes  []byte    // value in type []byte
 	DataUUID   [16]byte  // value in type uuid
 }
 
 // Row holds a single row of table data
 type Row struct {
 	TableName string    // name of the table row refers to
-	Data      []*Column // holds column data
+	Columns   []*Column // holds column data
 	Deleted   bool      // if deleted, will be skipped during scan
 }
 
 // results implements driver.Rows
 type results struct {
-	rows    []*Row
-	file    *os.File
-	reader  *csv.Reader
-	columns []string
+	tableSchema *Table
+	rows        []*Row
+	reader      *csv.Reader
+	cursor      int // increment after each Next()
+	columns     []string
 }
 
 // Close implements driver.Rows
 func (r *results) Close() error {
-	return fmt.Errorf("not implemented")
+	// return fmt.Errorf("not implemented")
+	return nil
 }
 
 // Columns implements driver.Rows
@@ -107,12 +113,168 @@ func (r *results) Columns() []string {
 
 // Next implements driver.Rows
 func (r *results) Next(dest []driver.Value) error {
-	d, err := r.reader.Read()
+	constraints := r.tableSchema.Constraints
+
+	row := r.rows[r.cursor]
+	for i, col := range row.Columns {
+		var constraint *Constraint
+		for _, cstr := range constraints {
+			if cstr.ColumnName == col.Name {
+				constraint = cstr
+			}
+		}
+
+		switch col.Type {
+		case ColumnTypeBool:
+			if constraint == nil {
+				dest[i] = driver.Value(col.DataBool)
+			} else {
+				dest[i] = sql.NullBool{
+					Bool:  col.DataBool,
+					Valid: col.DataIsNull,
+				}
+			}
+		case ColumnTypeInt:
+			if constraint == nil {
+				dest[i] = driver.Value(col.DataInt)
+			} else {
+				dest[i] = sql.NullInt64{
+					Int64: col.DataInt,
+					Valid: col.DataIsNull,
+				}
+			}
+		case ColumnTypeFloat:
+			if constraint == nil {
+				dest[i] = driver.Value(col.DataFloat)
+			} else {
+				dest[i] = sql.NullFloat64{
+					Float64: col.DataFloat,
+					Valid:   col.DataIsNull,
+				}
+			}
+		case ColumnTypeString:
+			if constraint == nil {
+				dest[i] = driver.Value(col.DataString)
+			} else {
+				dest[i] = sql.NullString{
+					String: col.DataString,
+					Valid:  col.DataIsNull,
+				}
+			}
+		case ColumnTypeTime:
+			if constraint == nil {
+				dest[i] = driver.Value(col.DataTime)
+			} else {
+				dest[i] = sql.NullTime{
+					Time:  col.DataTime,
+					Valid: col.DataIsNull,
+				}
+			}
+		case ColumnTypeBytes:
+			if constraint == nil {
+				dest[i] = driver.Value(col.DataBytes)
+			} else {
+				dest[i] = NullBytes{
+					Bytes: col.DataBytes,
+					Valid: col.DataIsNull,
+				}
+			}
+		case ColumnTypeUUID:
+			if constraint == nil {
+				dest[i] = driver.Value(col.DataUUID)
+			} else {
+				dest[i] = NullUUID{
+					UUID:  col.DataUUID,
+					Valid: col.DataIsNull,
+				}
+			}
+		default:
+			return fmt.Errorf("unsupported column type", col.Type)
+		}
+	}
+	return nil
+}
+
+// NullBytes for nullable bytes
+type NullBytes struct {
+	Bytes []byte
+	Valid bool
+}
+
+// Scan implements the Scanner interface
+func (n *NullBytes) Scan(value interface{}) error {
+	if value == nil {
+		n.Bytes, n.Valid = []byte{}, false
+		return nil
+	}
+	n.Valid = true
+	// return convertAssign(&n.Bytes, value)
+
+	// see if this will work
+	dat, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("cannot Scan NullBytes value")
+	}
+	copy(n.Bytes, dat)
+	return nil
+
+}
+
+// Value implements the Valuer interface
+func (n *NullBytes) Value() (driver.Value, error) {
+	if !n.Valid {
+		return nil, nil
+	}
+	return n.Bytes, nil
+}
+
+// NullUUID for nullable uuid
+type NullUUID struct {
+	UUID  [16]byte
+	Valid bool
+}
+
+var regexUUID = regexp.MustCompile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")
+
+// Scan implements the Scanner interface
+func (n *NullUUID) Scan(value interface{}) error {
+	if value == nil {
+		n.UUID, n.Valid = [16]byte{}, false
+		return nil
+	}
+	n.Valid = true
+	// return convertAssign(&n.UUID, value)
+
+	// convert hex string (uuid) to byte
+	dat, ok := value.(string)
+	if !ok {
+		return fmt.Errorf("not a string")
+	}
+	dat = strings.ToLower(dat)
+	if !regexUUID.MatchString(dat) {
+		return fmt.Errorf("invalid uuid")
+	}
+	dat = strings.ReplaceAll(dat, "-", "")
+	b, err := hex.DecodeString(dat)
 	if err != nil {
 		return err
 	}
-	for i := 0; i != len(r.columns); i++ {
-		dest[i] = driver.Value(d[i])
-	}
+
+	// in-place replace
+	copy(n.UUID[:], b[:])
 	return nil
+}
+
+// Value implements the Valuer interface
+func (n *NullUUID) Value() (driver.Value, error) {
+	if !n.Valid {
+		return "00000000-0000-0000-0000-000000000000", nil
+	}
+
+	dst := make([]byte, hex.EncodedLen(len(n.UUID)))
+	hex.Encode(dst, n.UUID[:])
+
+	str := fmt.Sprintf("%s-%s-%s-%s-%s", dst[0:7], dst[8:11], dst[12:15], dst[16:19], dst[20:])
+
+	return str, nil
 }

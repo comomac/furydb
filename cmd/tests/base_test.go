@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
+	"log"
 	"testing"
 
 	"github.com/comomac/furydb"
@@ -142,5 +144,69 @@ func TestLoad(t *testing.T) {
 	}
 	if len(db.Tables) == 0 {
 		t.Error(fmt.Errorf("tables is zero len"))
+	}
+}
+
+// TestSqlDriverOpen
+func TestSqlDriverOpen(t *testing.T) {
+	_, err := sql.Open("fury", "tmp-db")
+	if err != nil {
+		t.Error(err)
+	}
+
+}
+
+// TestSqlDriverInsert
+func TestSqlDriverInsert(t *testing.T) {
+	db, err := sql.Open("fury", "tmp-db")
+	if err != nil {
+		t.Error(err)
+	}
+
+	query := `
+	INSERT INTO users (email,password)
+	VALUES ('2d66e446-f7b4-4712-ad81-a5835a867bb3','bob@example.com','testpass');
+	`
+
+	// run insert query
+	_, err = db.Query(query)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+// TestSqlDriverSelect
+func TestSqlDriverSelect(t *testing.T) {
+	db, err := sql.Open("fury", "tmp-db")
+	if err != nil {
+		t.Error(err)
+	}
+
+	query := `
+	SELECT *
+	FROM users;
+	`
+
+	// run select query
+	rows, err := db.Query(query)
+	if err != nil {
+		t.Error(err)
+	}
+	defer rows.Close()
+
+	// get results
+	for rows.Next() {
+		var (
+			id       [16]byte
+			email    string
+			password string
+		)
+		if err := rows.Scan(&id, &email, &password); err != nil {
+			t.Error(err)
+		}
+		log.Printf("email: %s    password: %s\n", email, password)
+	}
+	if !rows.NextResultSet() {
+		t.Error(fmt.Errorf("expected more result sets: %v", rows.Err()))
 	}
 }
