@@ -9,7 +9,7 @@ import (
 
 var regexUUID = regexp.MustCompile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")
 
-func uuidHexToBin(txt string) (uid [16]byte, err error) {
+func uuidStrToBin(txt string) (uid [16]byte, err error) {
 	dat := strings.ToLower(txt)
 	if !regexUUID.MatchString(dat) {
 		return uid, ErrInvalidUUID

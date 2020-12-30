@@ -4,10 +4,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/csv"
-	"encoding/hex"
 	"fmt"
-	"regexp"
-	"strings"
 	"time"
 )
 
@@ -234,8 +231,6 @@ type NullUUID struct {
 	Valid bool
 }
 
-var regexUUID = regexp.MustCompile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")
-
 // Scan implements the Scanner interface
 func (n *NullUUID) Scan(value interface{}) error {
 	if value == nil {
@@ -250,12 +245,7 @@ func (n *NullUUID) Scan(value interface{}) error {
 	if !ok {
 		return fmt.Errorf("not a string")
 	}
-	dat = strings.ToLower(dat)
-	if !regexUUID.MatchString(dat) {
-		return fmt.Errorf("invalid uuid")
-	}
-	dat = strings.ReplaceAll(dat, "-", "")
-	b, err := hex.DecodeString(dat)
+	b, err := uuidStrToBin(dat)
 	if err != nil {
 		return err
 	}
@@ -271,10 +261,10 @@ func (n *NullUUID) Value() (driver.Value, error) {
 		return "00000000-0000-0000-0000-000000000000", nil
 	}
 
-	dst := make([]byte, hex.EncodedLen(len(n.UUID)))
-	hex.Encode(dst, n.UUID[:])
+	return uuidBinToStr(n.UUID), nil
+}
 
-	str := fmt.Sprintf("%s-%s-%s-%s-%s", dst[0:7], dst[8:11], dst[12:15], dst[16:19], dst[20:])
-
-	return str, nil
+// String display UUID in string format
+func (n *NullUUID) String() string {
+	return uuidBinToStr(n.UUID)
 }

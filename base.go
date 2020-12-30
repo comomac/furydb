@@ -16,6 +16,24 @@ const (
 	Verbose bool = false // use to aid debug
 )
 
+// various errors
+var (
+	ErrTableNotExist      = fmt.Errorf("no such table")
+	ErrColumnNotExist     = fmt.Errorf("no such column")
+	ErrFieldValueNotMatch = fmt.Errorf("column and values not match")
+	ErrValueTypeNotBool   = fmt.Errorf("value type not bool")
+	ErrValueTypeNotInt    = fmt.Errorf("value type not int")
+	ErrValueTypeNotFloat  = fmt.Errorf("value type not float")
+	ErrValueTypeNotString = fmt.Errorf("value type not string")
+	ErrValueTypeNotTime   = fmt.Errorf("value type not time")
+	ErrValueTypeNotBytes  = fmt.Errorf("value type not bytes")
+	ErrValueTypeNotUUID   = fmt.Errorf("value type not uuid")
+	ErrValueTypeNotMatch  = fmt.Errorf("value type type not match")
+	ErrColumnNotNullable  = fmt.Errorf("column not nullable")
+	ErrUnknownColumnType  = fmt.Errorf("unknown column type")
+	ErrInvalidUUID        = fmt.Errorf("invalid uuid")
+)
+
 // Create new blank database
 func Create(folderpath string, name string) (*Database, error) {
 	db := &Database{
