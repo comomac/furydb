@@ -13,8 +13,8 @@ func main() {
 	// qrySelect := `SELECT code, name, price
 	// FROM products;`
 
-	qryInsert := `INSERT INTO product (code, name, price)
-	VALUES ('a-821', 'honey',18.50);`
+	qryInsert := `INSERT INTO product (code, stock, name, price)
+	VALUES ('a-821', 10,   'honey. healthy and naturej''s friend'   ,18.50);`
 
 	if Debug {
 		fmt.Println(qryInsert)

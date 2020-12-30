@@ -92,53 +92,15 @@ func (p *Parser) Parse() (*InsertStatement, error) {
 
 	// Next we should loop over all our comma-delimited values.
 	for {
-		// // Read a value.
-		// tok, lit = p.scanValue()
-		// fmt.Println(11111, tok, 11111, lit)
-		// if tok != VALUE {
-		// 	return nil, fmt.Errorf("found %q, expected value", lit)
-		// }
-		// stmt.Values = append(stmt.Values, lit)
-
-		// // If the next token is not a comma then break the loop.
-		// tok, lit = p.scanValue()
-		// fmt.Println(22222, tok, 22222, lit)
-		// if tok != COMMA {
-		// 	fmt.Printf("??? %+v | %+v\n", tok, lit)
-		// 	p.unscan()
-		// 	break
-		// }
-
-		tok, lit = p.scanValue()
-		if tok == SINGLEQUO {
-			fmt.Println("111, sigle quote '")
-			continue
-		}
-		// if tok != VALUE {
-		// 	fmt.Printf("??? %+v | %+v\n", tok, lit)
-		// 	return nil, fmt.Errorf("found %q, expected value", lit)
-		// }
+		// Read a value.
+		tok, lit = p.scanValueIgnoreWhitespace()
 		if tok == VALUE {
 			stmt.Values = append(stmt.Values, lit)
-			continue
 		}
-		if tok == COMMA {
-			continue
-		}
-		if tok == RIGHTPAR {
-			break
-		}
-		fmt.Printf(">>> %d [%q]\n", tok, lit)
 
 		// If the next token is not a comma then break the loop.
-		tok, lit = p.scanValue()
-		if tok == RIGHTPAR {
-			p.unscan()
-			break
-		}
-		if tok != COMMA && tok != SINGLEQUO && tok != WS {
-			fmt.Printf("??? %+v | [%+v]\n", tok, lit)
-			p.unscan()
+		if tok, _ = p.scanIgnoreWhitespace(); tok != COMMA {
+			// p.unscan()
 			break
 		}
 	}
@@ -194,6 +156,18 @@ func (p *Parser) scanValue() (tok Token, lit string) {
 }
 
 // scanIgnoreWhitespace scans the next non-whitespace token.
+func (p *Parser) scanValueIgnoreWhitespace() (tok Token, lit string) {
+	tok, lit = p.scanValue()
+	if tok == WS {
+		tok, lit = p.scanValue()
+	}
+	if Debug {
+		fmt.Printf("tok: %+v      lit: %+v\n", tok, lit)
+	}
+	return
+}
+
+// scanIgnoreWhitespace scans the next non-whitespace token.
 func (p *Parser) scanIgnoreWhitespace() (tok Token, lit string) {
 	tok, lit = p.scan()
 	if tok == WS {
@@ -202,21 +176,6 @@ func (p *Parser) scanIgnoreWhitespace() (tok Token, lit string) {
 	if Debug {
 		fmt.Printf("tok: %+v      lit: %+v\n", tok, lit)
 	}
-	return
-}
-
-// scanValue scans the next value token.
-func (p *Parser) scanValueOld() (tok Token, lit string) {
-
-	tok, lit = p.s.ScanValue()
-	// whitespace? try again
-	if tok == WS {
-		tok, lit = p.s.ScanValue()
-	}
-	if Debug {
-		fmt.Printf("tok: %+v      lit: %+v\n", tok, lit)
-	}
-
 	return
 }
 
