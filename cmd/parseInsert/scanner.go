@@ -127,6 +127,7 @@ func (s *Scanner) scanValue() (tok Token, lit string) {
 
 	// Read every subsequent ident character into the buffer.
 	// Non-ident characters and EOF will cause the loop to exit.
+	var lastCh rune
 	for {
 		ch := s.read()
 
@@ -144,15 +145,24 @@ func (s *Scanner) scanValue() (tok Token, lit string) {
 			ch2 := s.read()
 			s.unread()
 
-			if ch != '\'' {
+			// if Debug {
+			// 	fmt.Printf("1: [%q]   2: [%q]   -1: [%q]\n", ch, ch2, lastCh)
+			// }
+
+			if ch == '\'' && ch2 == '\'' {
+				// escaped single quote
 				_, _ = buf.WriteRune(ch)
 
-			} else if ch == '\'' && ch2 == '\'' {
-				// escaped single quote
-				_, _ = buf.WriteRune('\'')
+			} else if ch == '\'' && lastCh == '\'' {
+				// resume escaped single quote
+
+			} else if ch != '\'' {
+				_, _ = buf.WriteRune(ch)
+
 			} else {
 				break
 			}
+			lastCh = ch
 		}
 	}
 
