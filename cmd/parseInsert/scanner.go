@@ -27,7 +27,7 @@ func (s *Scanner) Scan() (tok Token, lit string) {
 	// If we see a digit then consume as a number.
 	if isWhitespace(ch) {
 		s.unread()
-		return s.scanWhitespace(true)
+		return s.scanWhitespace()
 	} else if isLetter(ch) {
 		s.unread()
 		return s.scanIdent()
@@ -66,7 +66,7 @@ func (s *Scanner) ScanValue() (tok Token, lit string) {
 	// If we see a digit then consume as a number.
 	if isWhitespace(ch) {
 		s.unread()
-		return s.scanWhitespace(true)
+		return s.scanWhitespace()
 	} else if ch != ',' && ch != ';' && ch != ' ' && ch != ')' {
 		s.unread()
 		return s.scanValue()
@@ -90,7 +90,7 @@ func (s *Scanner) ScanValue() (tok Token, lit string) {
 }
 
 // scanWhitespace consumes the current rune and all contiguous whitespace.
-func (s *Scanner) scanWhitespace(packSpaces bool) (tok Token, lit string) {
+func (s *Scanner) scanWhitespace() (tok Token, lit string) {
 	// Create a buffer and read the current character into it.
 	var buf bytes.Buffer
 	buf.WriteRune(s.read())
@@ -100,10 +100,7 @@ func (s *Scanner) scanWhitespace(packSpaces bool) (tok Token, lit string) {
 	for {
 		if ch := s.read(); ch == eof {
 			break
-		} else if packSpaces && !isWhitespace(ch) {
-			s.unread()
-			break
-		} else if !packSpaces && !isWhitespaceB(ch) {
+		} else if !isWhitespace(ch) {
 			s.unread()
 			break
 		} else {
@@ -219,9 +216,6 @@ func (s *Scanner) unread() { _ = s.r.UnreadRune() }
 
 // isWhitespace returns true if the rune is a space, tab, or newline.
 func isWhitespace(ch rune) bool { return ch == ' ' || ch == '\t' || ch == '\n' }
-
-// isWhitespaceB returns true if the rune is a tab, or newline.
-func isWhitespaceB(ch rune) bool { return ch == '\t' || ch == '\n' }
 
 // isLetter returns true if the rune is a letter.
 func isLetter(ch rune) bool { return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') }
