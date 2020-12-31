@@ -206,4 +206,6 @@ func sanityCheckQuery(fields []string, values []string, table *Table) ([]*Column
 		}
 		rColumns = append(rColumns)
 	}
+
+	return rColumns, nil
 }

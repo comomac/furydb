@@ -2,8 +2,8 @@ package furydb
 
 import "fmt"
 
-// parseQueryUpdate parse query
-func (c *FuryConn) parseQueryUpdate(query string) (*results, error) {
+// queryUpdate executes a SQL UPDATE statement
+func (c *FuryConn) queryUpdate(query string) (*results, error) {
 	res := &results{}
 	return res, fmt.Errorf("not implemented")
 }

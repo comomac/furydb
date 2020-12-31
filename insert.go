@@ -13,11 +13,8 @@ type InsertStatement struct {
 	TableName string
 }
 
-type InsertResults struct {
-}
-
 // queryInsert executes a SQL INSERT statement
-func (c *FuryConn) queryInsert(query string) (*InsertResults, error) {
+func (c *FuryConn) queryInsert(query string) (*results, error) {
 	parser := NewParser(strings.NewReader(query))
 	stmt, err := parser.parseInsert()
 	if err != nil {
@@ -42,7 +39,7 @@ func (c *FuryConn) queryInsert(query string) (*InsertResults, error) {
 	}
 
 	// sanity check and get formatted columns values
-	values, err := sanityCheckQuery(stmt.Fields, stmt.Values, table)
+	_, err = sanityCheckQuery(stmt.Fields, stmt.Values, table)
 	if err != nil {
 		return nil, err
 	}

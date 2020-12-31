@@ -23,7 +23,23 @@ const (
 	SEMICOL   // ;
 
 	// Keywords
+	CREATE
+	TABLE
 	INSERT
 	INTO
 	VALUES
+
+	// Column Types
+	BOOL
+	INT
+	FLOAT
+	STRING
+	TIME
+	BYTES
+	UUID
+
+	// Constraints
+	NOTNULL
+	PRIMARYKEY
+	FOREIGNKEY
 )

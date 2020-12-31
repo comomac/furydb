@@ -13,6 +13,7 @@ const (
 	VersionMajor int = 0 // database schema change
 	VersionMinor int = 1 // bug fixes
 
+	Debug   bool = true
 	Verbose bool = false // use to aid debug
 )
 

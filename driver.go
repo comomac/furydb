@@ -50,28 +50,28 @@ func (c *FuryConn) Query(query string, args []driver.Value) (driver.Rows, error)
 
 	str := strings.ToUpper(strings.TrimSpace(query))
 	if strings.HasPrefix(str, "INSERT") {
-		res, err = c.parseQueryInsert(query)
+		res, err = c.queryInsert(query)
 		if err != nil {
 			return nil, err
 		}
 		return res, nil
 
 	} else if strings.HasPrefix(str, "SELECT") {
-		res, err = c.parseQueryInsert(query)
+		res, err = c.querySelect(query)
 		if err != nil {
 			return nil, err
 		}
 		return res, nil
 
 	} else if strings.HasPrefix(str, "UPDATE") {
-		res, err = c.parseQueryInsert(query)
+		res, err = c.queryUpdate(query)
 		if err != nil {
 			return nil, err
 		}
 		return res, nil
 
 	} else if strings.HasPrefix(str, "DELETE") {
-		res, err = c.parseQueryInsert(query)
+		res, err = c.queryDelete(query)
 		if err != nil {
 			return nil, err
 		}
