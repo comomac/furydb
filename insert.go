@@ -8,14 +8,6 @@ import (
 	"strings"
 )
 
-// InsertStatement represents a SQL INSERT statement.
-type InsertStatement struct {
-	FieldsAll bool     // true if using all field(s)
-	Fields    []string // or individual field(s)
-	Values    []string
-	TableName string
-}
-
 // queryInsert executes a SQL INSERT statement
 func (c *FuryConn) queryInsert(query string) (*results, error) {
 	res := &results{}
@@ -109,6 +101,14 @@ func (c *FuryConn) queryInsert(query string) (*results, error) {
 	return res, nil
 }
 
+// InsertStatement represents a SQL INSERT statement.
+type InsertStatement struct {
+	FieldsAll bool     // true if using all field(s)
+	Fields    []string // or individual field(s)
+	Values    []string
+	TableName string
+}
+
 // parseInsert parses a SQL INSERT statement
 func (p *Parser) parseInsert() (*InsertStatement, error) {
 	stmt := &InsertStatement{}
@@ -191,7 +191,7 @@ func (p *Parser) parseInsert() (*InsertStatement, error) {
 		return nil, fmt.Errorf("found %q, expected )))", lit)
 	}
 
-	// If the next token is not a comma then break the loop.
+	// If the next token is not a ; then break the loop.
 	if tok, lit = p.scanValue(); tok != SEMICOL {
 		return nil, fmt.Errorf("found %q, expected ;", lit)
 	}
