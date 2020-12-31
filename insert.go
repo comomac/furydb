@@ -83,7 +83,6 @@ func (c *FuryConn) queryInsert(query string) (*results, error) {
 	}
 	// update results
 	res.rows = []*Row{row}
-	fmt.Println("row >>>>>>>>", row)
 
 	// convert data to bytes
 	buf := bytes.Buffer{}
