@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 )
 
 // version of furydb
@@ -38,6 +39,7 @@ var (
 	ErrColumnNotNullable        = fmt.Errorf("column not nullable")
 	ErrUnknownColumnType        = fmt.Errorf("unknown column type")
 	ErrInvalidUUID              = fmt.Errorf("invalid uuid")
+	ErrDataTooBig               = fmt.Errorf("data row too big")
 )
 
 // Create new blank database
@@ -84,16 +86,8 @@ func (db *Database) Save(folderpath ...string) error {
 		db.Folderpath = folderpath[0]
 	}
 
-	// create dir if not exist
-	_, err := os.Stat(db.Folderpath)
-	if err != nil && os.IsNotExist(err) {
-		os.MkdirAll(db.Folderpath, 0755)
-	} else if err != nil {
-		return err
-	}
-
 	// save schema. database, table, column
-	pathSchema := db.Folderpath + "/schema"
+	pathSchema := path.Join(db.Folderpath, "schema")
 	size, err := writeFile(pathSchema, db)
 	if err != nil {
 		return err
@@ -113,7 +107,7 @@ func (db *Database) Close() error {
 }
 
 // writeFile without retyping lots of code, returns written size
-func writeFile(folderpath string, dat interface{}) (int, error) {
+func writeFile(filepath string, dat interface{}) (int, error) {
 	// convert data to bytes
 	buf := bytes.Buffer{}
 	enc := gob.NewEncoder(&buf)
@@ -122,8 +116,20 @@ func writeFile(folderpath string, dat interface{}) (int, error) {
 		return 0, err
 	}
 
+	// create dir if not exist
+	dirpath := path.Dir(filepath)
+	_, err = os.Stat(dirpath)
+	if err != nil && os.IsNotExist(err) {
+		err = os.MkdirAll(dirpath, 0755)
+		if err != nil {
+			return 0, err
+		}
+	} else if err != nil {
+		return 0, err
+	}
+
 	// file open
-	ptr, err := os.Create(folderpath)
+	ptr, err := os.Create(filepath)
 	if err != nil {
 		return 0, err
 	}

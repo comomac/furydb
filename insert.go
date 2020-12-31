@@ -1,7 +1,10 @@
 package furydb
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
+	"path"
 	"strings"
 )
 
@@ -15,6 +18,8 @@ type InsertStatement struct {
 
 // queryInsert executes a SQL INSERT statement
 func (c *FuryConn) queryInsert(query string) (*results, error) {
+	rs := &results{}
+
 	parser := NewParser(strings.NewReader(query))
 	stmt, err := parser.parseInsert()
 	if err != nil {
@@ -39,14 +44,69 @@ func (c *FuryConn) queryInsert(query string) (*results, error) {
 	}
 
 	// sanity check and get formatted columns values
-	_, err = sanityCheckQuery(stmt.Fields, stmt.Values, table)
+	columns, err := sanityCheckQuery(stmt.Fields, stmt.Values, table)
+	if err != nil {
+		return nil, err
+	}
+	// update results
+	rs.columns = rs.columns
+
+	// find row id or generate one
+	var pkColName string
+	var id string
+	for _, cstr := range table.Constraints {
+		if cstr.IsPrimaryKey {
+			pkColName = cstr.ColumnName
+			break
+		}
+	}
+	if pkColName != "" {
+		for _, col := range columns {
+			if col.Name == pkColName {
+				// todo detect type and pick correctly, instead of using this shortcut
+				id = UUIDBinToStr(col.DataUUID)
+			}
+		}
+	}
+	if id == "" {
+		id, err = UUIDNewV4()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// convert to row
+	row := &Row{
+		TableName: table.Name,
+		Columns:   columns,
+	}
+	// update results
+	rs.rows = []*Row{row}
+	fmt.Println("row >>>>>>>>", row)
+
+	// convert data to bytes
+	buf := bytes.Buffer{}
+	enc := gob.NewEncoder(&buf)
+	err = enc.Encode(row)
 	if err != nil {
 		return nil, err
 	}
 
-	// todo code data insert
+	// todo make system support larger than 8k encoded row
+	if buf.Len() > 8192 {
+		return nil, ErrDataTooBig
+	}
+	// todo make rows in single file instead of individual files
+	filepath := path.Join(c.db.Folderpath, table.Name, id)
+	if Verbose >= 3 {
+		fmt.Printf("writing row data (%d) to %s", buf.Len(), filepath)
+	}
+	_, err = writeFile(filepath, row)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	return rs, nil
 }
 
 // parseInsert parses a SQL INSERT statement

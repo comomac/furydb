@@ -245,7 +245,7 @@ func (n *NullUUID) Scan(value interface{}) error {
 	if !ok {
 		return fmt.Errorf("not a string")
 	}
-	b, err := uuidStrToBin(dat)
+	b, err := UUIDStrToBin(dat)
 	if err != nil {
 		return err
 	}
@@ -261,10 +261,10 @@ func (n *NullUUID) Value() (driver.Value, error) {
 		return "00000000-0000-0000-0000-000000000000", nil
 	}
 
-	return uuidBinToStr(n.UUID), nil
+	return UUIDBinToStr(n.UUID), nil
 }
 
 // String display UUID in string format
 func (n *NullUUID) String() string {
-	return uuidBinToStr(n.UUID)
+	return UUIDBinToStr(n.UUID)
 }

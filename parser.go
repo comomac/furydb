@@ -106,6 +106,7 @@ func sanityCheckQuery(fields []string, values []string, table *Table) ([]*Column
 		var column *Column
 		for _, col := range table.Columns {
 			if col.Name == field {
+				// duplicate so we dont mutate the original column
 				column = &*col
 			}
 		}
@@ -169,11 +170,12 @@ func sanityCheckQuery(fields []string, values []string, table *Table) ([]*Column
 				column.DataFloat = num
 			}
 		case ColumnTypeString:
+			// todo, null or 'null' is just treated as null, this could be problematic
 			if strings.ToLower(value) == "null" {
 				if constraint == nil {
 					return nil, ErrColumnNotNullable
 				}
-				column.DataFloat = 0
+				column.DataString = ""
 				column.DataIsNull = true
 			} else {
 				column.DataString = value
@@ -200,7 +202,7 @@ func sanityCheckQuery(fields []string, values []string, table *Table) ([]*Column
 				column.DataUUID = [16]byte{}
 				column.DataIsNull = true
 			} else {
-				b, err := uuidStrToBin(value)
+				b, err := UUIDStrToBin(value)
 				if err != nil {
 					return nil, ErrValueTypeNotUUID
 				}
@@ -209,7 +211,8 @@ func sanityCheckQuery(fields []string, values []string, table *Table) ([]*Column
 		default:
 			return nil, ErrUnknownColumnType
 		}
-		rColumns = append(rColumns)
+		// add columns together and eventually use for return
+		rColumns = append(rColumns, column)
 	}
 
 	return rColumns, nil

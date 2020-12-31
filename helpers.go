@@ -1,6 +1,7 @@
 package furydb
 
 import (
+	"crypto/rand"
 	"encoding/hex"
 	"fmt"
 	"regexp"
@@ -9,7 +10,8 @@ import (
 
 var regexUUID = regexp.MustCompile("[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}")
 
-func uuidStrToBin(txt string) (uid [16]byte, err error) {
+// UUIDStrToBin convert uuid string to bytes
+func UUIDStrToBin(txt string) (uid [16]byte, err error) {
 	dat := strings.ToLower(txt)
 	if !regexUUID.MatchString(dat) {
 		return uid, ErrInvalidUUID
@@ -26,10 +28,21 @@ func uuidStrToBin(txt string) (uid [16]byte, err error) {
 	return uid, nil
 }
 
-func uuidBinToStr(uid [16]byte) string {
+// UUIDBinToStr convert uuid binary to string
+func UUIDBinToStr(uid [16]byte) string {
 	dst := make([]byte, hex.EncodedLen(len(uid)))
 	hex.Encode(dst, uid[:])
+	return fmt.Sprintf("%s-%s-%s-%s-%s", dst[0:8], dst[8:12], dst[12:16], dst[16:20], dst[20:32])
+}
 
-	str := fmt.Sprintf("%s-%s-%s-%s-%s", dst[0:7], dst[8:11], dst[12:15], dst[16:19], dst[20:])
-	return str
+// UUIDNewV4 generate random uuid string
+func UUIDNewV4() (string, error) {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+	var b2 [16]byte
+	copy(b2[:], b[:])
+	return UUIDBinToStr(b2), nil
 }

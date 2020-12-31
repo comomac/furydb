@@ -183,8 +183,8 @@ func TestSqlDriverInsert(t *testing.T) {
 	}
 
 	query := `
-	INSERT INTO users (email,password)
-	VALUES ('bob@example.com','testpass');
+	INSERT INTO users (id,email,password)
+	VALUES ('0583e443-015a-0b3e-0f19-6bce4dfdd638','bob@example.com','testpass');
 	`
 
 	// run insert query
