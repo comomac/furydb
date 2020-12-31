@@ -195,6 +195,10 @@ func (s *Scanner) scanIdent() (tok Token, lit string) {
 		return INTO, buf.String()
 	case "VALUES":
 		return VALUES, buf.String()
+	case "SELECT":
+		return SELECT, buf.String()
+	case "FROM":
+		return FROM, buf.String()
 	}
 
 	// Otherwise return as a regular identifier.

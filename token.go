@@ -23,11 +23,16 @@ const (
 	SEMICOL   // ;
 
 	// Keywords
+	// sql create table
 	CREATE
 	TABLE
+	// sql insert
 	INSERT
 	INTO
 	VALUES
+	// sql select
+	SELECT
+	FROM
 
 	// Column Types
 	BOOL

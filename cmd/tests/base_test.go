@@ -204,7 +204,7 @@ func TestSqlDriverSelect(t *testing.T) {
 	}
 
 	query := `
-	SELECT *
+	SELECT (id,email,password)
 	FROM users;
 	`
 
