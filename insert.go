@@ -18,7 +18,7 @@ type InsertStatement struct {
 
 // queryInsert executes a SQL INSERT statement
 func (c *FuryConn) queryInsert(query string) (*results, error) {
-	rs := &results{}
+	res := &results{}
 
 	parser := NewParser(strings.NewReader(query))
 	stmt, err := parser.parseInsert()
@@ -49,7 +49,7 @@ func (c *FuryConn) queryInsert(query string) (*results, error) {
 		return nil, err
 	}
 	// update results
-	rs.columns = rs.columns
+	res.columns = res.columns
 
 	// find row id or generate one
 	var pkColName string
@@ -63,12 +63,13 @@ func (c *FuryConn) queryInsert(query string) (*results, error) {
 	if pkColName != "" {
 		for _, col := range columns {
 			if col.Name == pkColName {
-				// todo detect type and pick correctly, instead of using this shortcut
+				// todo detect id type and pick correctly, instead of using this shortcut
 				id = UUIDBinToStr(col.DataUUID)
 			}
 		}
 	}
 	if id == "" {
+		// todo detect id type correctly, instead of using this shortcut
 		id, err = UUIDNewV4()
 		if err != nil {
 			return nil, err
@@ -81,7 +82,7 @@ func (c *FuryConn) queryInsert(query string) (*results, error) {
 		Columns:   columns,
 	}
 	// update results
-	rs.rows = []*Row{row}
+	res.rows = []*Row{row}
 	fmt.Println("row >>>>>>>>", row)
 
 	// convert data to bytes
@@ -106,7 +107,7 @@ func (c *FuryConn) queryInsert(query string) (*results, error) {
 		return nil, err
 	}
 
-	return rs, nil
+	return res, nil
 }
 
 // parseInsert parses a SQL INSERT statement
