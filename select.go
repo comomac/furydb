@@ -1,7 +1,11 @@
 package furydb
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
+	"io/ioutil"
+	"path"
 	"strings"
 )
 
@@ -14,9 +18,39 @@ func (c *FuryConn) querySelect(query string) (*results, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("stmt %+v\n", stmt)
 
-	return res, fmt.Errorf("not implemented")
+	// sanity check find if table exists
+	_, table := c.db.findTable(stmt.TableName)
+	if table == nil {
+		return nil, ErrTableNotExist
+	}
+	// result remember table schema
+	res.tableSchema = table
+
+	// select to all fields
+	if stmt.FieldsAll {
+		for _, col := range table.Columns {
+			stmt.Fields = append(stmt.Fields, col.Name)
+		}
+	}
+	// result remember columns
+	res.columns = stmt.Fields
+
+	if Verbose >= 2 {
+		fmt.Printf("stmt: %+v\n", stmt)
+	}
+
+	folderpath := path.Join(c.db.Folderpath, table.Name)
+	res.rows, err = scanDirRows(folderpath, table.Name, stmt.Fields, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if Verbose >= 2 {
+		fmt.Printf("giving results %+v\n", res)
+	}
+
+	return res, nil
 }
 
 // SelectStatement represents a SQL SELECT statement.
@@ -79,4 +113,81 @@ func (p *Parser) parseSelect() (*SelectStatement, error) {
 
 	// Return the successfully parsed statement.
 	return stmt, nil
+}
+
+// Where condisions to match
+type Where struct {
+	OperatorType OperatorType
+	Value        interface{}
+}
+
+// OperatorType for where comparision
+type OperatorType int
+
+// types of comparisions
+const (
+	OperatorTypeLessThan int = iota
+	OperatorTypeLessThanOrEqual
+	OperatorTypeMoreThan
+	OperatorTypeMoreThanOrEqual
+	OperatorTypeEqual
+	OperatorTypeNotEqual
+)
+
+// scanDirRows scan all the records in table dir for rows
+func scanDirRows(folderpath string, tableName string, columns []string, wheres []*Where) ([]*Row, error) {
+	files, err := ioutil.ReadDir(folderpath)
+	if err != nil {
+		return nil, err
+	}
+
+	rows := []*Row{}
+
+	for _, file := range files {
+		filepath := path.Join(folderpath, file.Name())
+		dat, err := ioutil.ReadFile(filepath)
+		if err != nil {
+			fmt.Printf("read row fail - %s  Err: ( %+v )\n", filepath, err)
+			continue
+		}
+
+		// row decode
+		row := &Row{}
+		dec := gob.NewDecoder(bytes.NewReader(dat))
+		err = dec.Decode(row)
+		if err != nil {
+			fmt.Printf("decode row failed - %s  Err: ( %+v )\n", filepath, err)
+			continue
+		}
+
+		// todo do where match
+		// if wheres != nil {
+		// 	for _, where := range wheres {
+		// ??? continue
+		// 	}
+		// }
+
+		// sort and filter column accordly
+		resCols := []*Column{}
+		for _, colName := range columns {
+			for _, resCol := range row.Columns {
+				if resCol.Name == colName {
+					resCols = append(resCols, resCol)
+				}
+			}
+		}
+		if len(resCols) != len(columns) {
+			fmt.Printf("invalid result column length - %s\n", filepath)
+			continue
+		}
+		row.Columns = resCols
+
+		rows = append(rows, row)
+	}
+
+	if Verbose >= 2 {
+		fmt.Printf("scanDirRows -> rows %+v\n", rows)
+	}
+
+	return rows, nil
 }

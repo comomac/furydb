@@ -146,3 +146,13 @@ func writeFile(filepath string, dat interface{}) (int, error) {
 
 	return size, err
 }
+
+// isExistTable get table by name
+func (db *Database) findTable(tableName string) (bool, *Table) {
+	for _, table := range db.Tables {
+		if table.Name == tableName {
+			return true, table
+		}
+	}
+	return false, nil
+}

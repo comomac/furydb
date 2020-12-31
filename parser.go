@@ -65,7 +65,7 @@ func (p *Parser) scanValueIgnoreWhitespace() (tok Token, lit string) {
 	if tok == WS {
 		tok, lit = p.scanValue()
 	}
-	if Verbose >= 2 {
+	if Verbose >= 3 {
 		fmt.Printf("tok: %+v      lit: %+v\n", tok, lit)
 	}
 	return
@@ -77,7 +77,7 @@ func (p *Parser) scanIgnoreWhitespace() (tok Token, lit string) {
 	if tok == WS {
 		tok, lit = p.scan()
 	}
-	if Verbose >= 2 {
+	if Verbose >= 3 {
 		fmt.Printf("tok: %+v      lit: %+v\n", tok, lit)
 	}
 	return

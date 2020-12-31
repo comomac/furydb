@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"testing"
 
 	"github.com/comomac/furydb"
@@ -54,12 +53,14 @@ func TestCreate(t *testing.T) {
 					ColumnName:      "id",
 					IsPrimaryKey:    true,
 					IsUnique:        true,
+					IsNotNull:       true,
 					DefaultDataUUID: "gen_uuid_v4()",
 				},
 				{
 					Name:       "cstr-unique-email",
 					ColumnName: "email",
 					IsUnique:   true,
+					IsNotNull:  true, // this will blow up if not nullable
 				},
 				{
 					Name:            "cstr-created_at",
@@ -216,21 +217,33 @@ func TestSqlDriverSelect(t *testing.T) {
 	}
 	defer rows.Close()
 
+	var (
+		// id       [16]byte
+		id       string
+		email    string
+		password string
+		// email    sql.NullString
+		// password sql.NullString
+	)
 	// get results
 	for rows.Next() {
-		var (
-			id       [16]byte
-			email    string
-			password string
-		)
 		if err := rows.Scan(&id, &email, &password); err != nil {
 			t.Error(err)
 			return
 		}
-		log.Printf("email: %s    password: %s\n", email, password)
+		// log.Printf("id: %+v   email: %+v   password: %+v\n", id, email, password)
 	}
-	if !rows.NextResultSet() {
-		t.Error(fmt.Errorf("expected more result sets: %v", rows.Err()))
-		return
+	if id != "0583e443-015a-0b3e-0f19-6bce4dfdd638" {
+		t.Error(fmt.Errorf("invalid id"))
 	}
+	if email != "bob@example.com" {
+		t.Error(fmt.Errorf("invalid email"))
+	}
+	if password != "testpass" {
+		t.Error(fmt.Errorf("invalid password"))
+	}
+	// if !rows.NextResultSet() {
+	// 	t.Error(fmt.Errorf("expected more result sets: %v", rows.Err()))
+	// 	return
+	// }
 }

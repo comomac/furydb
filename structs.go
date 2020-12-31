@@ -3,8 +3,8 @@ package furydb
 import (
 	"database/sql"
 	"database/sql/driver"
-	"encoding/csv"
 	"fmt"
+	"io"
 	"time"
 )
 
@@ -71,14 +71,15 @@ type Column struct {
 	Type ColumnType // column data type
 
 	// anything below is used for holding data
-	DataIsNull bool      // value is null (if column is nullable)
-	DataBool   bool      // value in type bool
-	DataInt    int64     // value in type int
-	DataFloat  float64   // value in type float64
-	DataString string    // value in type string
-	DataTime   time.Time // value in type time.Time
-	DataBytes  []byte    // value in type []byte
-	DataUUID   [16]byte  // value in type uuid
+	DataIsNull  bool      // value is null (if column is nullable)
+	DataIsValid bool      // value is valid (if column is nullable)
+	DataBool    bool      // value in type bool
+	DataInt     int64     // value in type int
+	DataFloat   float64   // value in type float64
+	DataString  string    // value in type string
+	DataTime    time.Time // value in type time.Time
+	DataBytes   []byte    // value in type []byte
+	DataUUID    [16]byte  // value in type uuid
 }
 
 // Row holds a single row of table data
@@ -92,7 +93,6 @@ type Row struct {
 type results struct {
 	tableSchema *Table
 	rows        []*Row
-	reader      *csv.Reader
 	cursor      int // increment after each Next()
 	columns     []string
 }
@@ -110,85 +110,118 @@ func (r *results) Columns() []string {
 
 // Next implements driver.Rows
 func (r *results) Next(dest []driver.Value) error {
+	// eod of record
+	if r.cursor >= len(r.rows) {
+		return io.EOF
+	}
+
+	if Verbose >= 2 {
+		fmt.Printf("next (%d) rows %+v\n", r.cursor, r.rows)
+		fmt.Printf("next (%d) []driver.Value %+v %+v\n", r.cursor, r.Columns(), dest)
+	}
+
 	constraints := r.tableSchema.Constraints
 
 	row := r.rows[r.cursor]
+	if Verbose >= 2 {
+		fmt.Printf("next (%d) row %+v\n", r.cursor, row)
+	}
 	for i, col := range row.Columns {
-		var constraint *Constraint
+		// figure out constraints
+		var isNullable bool
 		for _, cstr := range constraints {
-			if cstr.ColumnName == col.Name {
-				constraint = cstr
+			if cstr.ColumnName != col.Name {
+				continue
+			}
+			if !cstr.IsNotNull {
+				isNullable = true
 			}
 		}
+		// todo implement rest of the nullable support
+		// sql.RowsColumnTypeNullable
+		// sql.ColumnTypeNullable
+		// etc
+		isNullable = false
 
 		switch col.Type {
 		case ColumnTypeBool:
-			if constraint == nil {
-				dest[i] = driver.Value(col.DataBool)
-			} else {
+			if isNullable {
 				dest[i] = sql.NullBool{
-					Bool:  col.DataBool,
-					Valid: col.DataIsNull,
+					Bool: col.DataBool,
+					// todo valid for now
+					Valid: true,
 				}
+			} else {
+				dest[i] = driver.Value(col.DataBool)
 			}
 		case ColumnTypeInt:
-			if constraint == nil {
-				dest[i] = driver.Value(col.DataInt)
-			} else {
+			if isNullable {
 				dest[i] = sql.NullInt64{
 					Int64: col.DataInt,
-					Valid: col.DataIsNull,
+					// todo valid for now
+					Valid: true,
 				}
+			} else {
+				dest[i] = driver.Value(col.DataInt)
 			}
 		case ColumnTypeFloat:
-			if constraint == nil {
-				dest[i] = driver.Value(col.DataFloat)
-			} else {
+			if isNullable {
 				dest[i] = sql.NullFloat64{
 					Float64: col.DataFloat,
-					Valid:   col.DataIsNull,
+					// todo valid for now
+					Valid: true,
 				}
+			} else {
+				dest[i] = driver.Value(col.DataFloat)
 			}
 		case ColumnTypeString:
-			if constraint == nil {
-				dest[i] = driver.Value(col.DataString)
-			} else {
-				dest[i] = sql.NullString{
+			if isNullable {
+				fmt.Println(".......................")
+				dest[i] = driver.Value(sql.NullString{
 					String: col.DataString,
-					Valid:  col.DataIsNull,
-				}
+					// todo valid for now
+					Valid: true,
+				})
+			} else {
+				dest[i] = driver.Value(col.DataString)
 			}
 		case ColumnTypeTime:
-			if constraint == nil {
-				dest[i] = driver.Value(col.DataTime)
-			} else {
+			if isNullable {
 				dest[i] = sql.NullTime{
-					Time:  col.DataTime,
-					Valid: col.DataIsNull,
+					Time: col.DataTime,
+					// todo valid for now
+					Valid: true,
 				}
+			} else {
+				dest[i] = driver.Value(col.DataTime)
 			}
 		case ColumnTypeBytes:
-			if constraint == nil {
-				dest[i] = driver.Value(col.DataBytes)
-			} else {
+			if isNullable {
 				dest[i] = NullBytes{
 					Bytes: col.DataBytes,
-					Valid: col.DataIsNull,
+					// todo valid for now
+					Valid: true,
 				}
+			} else {
+				dest[i] = driver.Value(col.DataBytes)
 			}
 		case ColumnTypeUUID:
-			if constraint == nil {
-				dest[i] = driver.Value(col.DataUUID)
-			} else {
+			if isNullable {
 				dest[i] = NullUUID{
-					UUID:  col.DataUUID,
-					Valid: col.DataIsNull,
+					UUID: col.DataUUID,
+					// todo valid for now
+					Valid: true,
 				}
+			} else {
+				dest[i] = driver.Value(UUIDBinToStr(col.DataUUID))
 			}
 		default:
-			return fmt.Errorf("unsupported column type", col.Type)
+			return ErrUnknownColumnType
 		}
 	}
+	// increment cursor
+	r.cursor++
+
 	return nil
 }
 
@@ -214,7 +247,6 @@ func (n *NullBytes) Scan(value interface{}) error {
 	}
 	copy(n.Bytes, dat)
 	return nil
-
 }
 
 // Value implements the Valuer interface

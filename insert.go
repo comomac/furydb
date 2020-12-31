@@ -18,17 +18,13 @@ func (c *FuryConn) queryInsert(query string) (*results, error) {
 		return nil, err
 	}
 
-	// find if table exists
-	var table *Table
-	for _, tbl := range c.db.Tables {
-		if tbl.Name == stmt.TableName {
-			table = tbl
-		}
-	}
+	// sanity check find if table exists
+	_, table := c.db.findTable(stmt.TableName)
 	if table == nil {
 		return nil, ErrTableNotExist
 	}
 
+	// insert to all fields
 	if stmt.FieldsAll {
 		for _, col := range table.Columns {
 			stmt.Fields = append(stmt.Fields, col.Name)
@@ -40,8 +36,9 @@ func (c *FuryConn) queryInsert(query string) (*results, error) {
 	if err != nil {
 		return nil, err
 	}
+	// todo probably unnecessary
 	// update results
-	res.columns = res.columns
+	res.columns = stmt.Fields
 
 	// find row id or generate one
 	var pkColName string
