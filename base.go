@@ -13,26 +13,31 @@ const (
 	VersionMajor int = 0 // database schema change
 	VersionMinor int = 1 // bug fixes
 
-	Debug   bool = true
-	Verbose bool = false // use to aid debug
+	// verbose level, use to aid debug
+	// 0 off
+	// 1 minimal, lib/info level
+	// 2 func level
+	// 3 block level
+	// 4 loop level
+	Verbose int = 1
 )
 
 // various errors
 var (
-	ErrTableNotExist      = fmt.Errorf("no such table")
-	ErrColumnNotExist     = fmt.Errorf("no such column")
-	ErrFieldValueNotMatch = fmt.Errorf("column and values not match")
-	ErrValueTypeNotBool   = fmt.Errorf("value type not bool")
-	ErrValueTypeNotInt    = fmt.Errorf("value type not int")
-	ErrValueTypeNotFloat  = fmt.Errorf("value type not float")
-	ErrValueTypeNotString = fmt.Errorf("value type not string")
-	ErrValueTypeNotTime   = fmt.Errorf("value type not time")
-	ErrValueTypeNotBytes  = fmt.Errorf("value type not bytes")
-	ErrValueTypeNotUUID   = fmt.Errorf("value type not uuid")
-	ErrValueTypeNotMatch  = fmt.Errorf("value type type not match")
-	ErrColumnNotNullable  = fmt.Errorf("column not nullable")
-	ErrUnknownColumnType  = fmt.Errorf("unknown column type")
-	ErrInvalidUUID        = fmt.Errorf("invalid uuid")
+	ErrTableNotExist            = fmt.Errorf("no such table")
+	ErrColumnNotExist           = fmt.Errorf("no such column")
+	ErrFieldValueLengthNotMatch = fmt.Errorf("columns and values length not match")
+	ErrValueTypeNotBool         = fmt.Errorf("value type not bool")
+	ErrValueTypeNotInt          = fmt.Errorf("value type not int")
+	ErrValueTypeNotFloat        = fmt.Errorf("value type not float")
+	ErrValueTypeNotString       = fmt.Errorf("value type not string")
+	ErrValueTypeNotTime         = fmt.Errorf("value type not time")
+	ErrValueTypeNotBytes        = fmt.Errorf("value type not bytes")
+	ErrValueTypeNotUUID         = fmt.Errorf("value type not uuid")
+	ErrValueTypeNotMatch        = fmt.Errorf("value type type not match")
+	ErrColumnNotNullable        = fmt.Errorf("column not nullable")
+	ErrUnknownColumnType        = fmt.Errorf("unknown column type")
+	ErrInvalidUUID              = fmt.Errorf("invalid uuid")
 )
 
 // Create new blank database
@@ -94,7 +99,7 @@ func (db *Database) Save(folderpath ...string) error {
 		return err
 	}
 
-	if Verbose {
+	if Verbose >= 1 {
 		fmt.Printf("schema %s   size: %d bytes\n", db.Name, size)
 	}
 

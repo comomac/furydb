@@ -9,14 +9,21 @@ import (
 	"github.com/comomac/furydb"
 )
 
+// holder so tests can use same connection without reconnect to db
+var (
+	db  *sql.DB
+	fdb *furydb.Database
+)
+
 // TestCreate db, written this before the parser is made
 func TestCreate(t *testing.T) {
-	db, err := furydb.Create("tmp-db", "testme")
+	var err error
+	fdb, err = furydb.Create("tmp-db", "testme")
 	if err != nil {
 		t.Error(err)
 	}
 
-	db.Tables = []*furydb.Table{
+	fdb.Tables = []*furydb.Table{
 		{
 			Name: "users",
 			Columns: []*furydb.Column{
@@ -123,36 +130,35 @@ func TestCreate(t *testing.T) {
 		},
 	}
 
-	err = db.Save()
+	err = fdb.Save()
 	if err != nil {
 		t.Error(err)
 	}
 }
 
-// // TestLoad db
-// func TestLoad(t *testing.T) {
-// 	db, err := furydb.Load("tmp-db")
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
+// TestLoad db
+func TestLoad(t *testing.T) {
+	var err error
+	fdb, err = furydb.Load("tmp-db")
+	if err != nil {
+		t.Error(err)
+	}
 
-// 	if db.Name != "testme" {
-// 		t.Error(fmt.Errorf("name mismatch"))
-// 	}
-// 	if db.Tables == nil {
-// 		t.Error(fmt.Errorf("tables is nil"))
-// 	}
-// 	if len(db.Tables) == 0 {
-// 		t.Error(fmt.Errorf("tables is zero len"))
-// 	}
-// }
-
-var db *sql.DB
+	if fdb.Name != "testme" {
+		t.Error(fmt.Errorf("name mismatch"))
+	}
+	if fdb.Tables == nil {
+		t.Error(fmt.Errorf("tables is nil"))
+	}
+	if len(fdb.Tables) == 0 {
+		t.Error(fmt.Errorf("tables is zero len"))
+	}
+}
 
 // TestSqlDriverOpen
 func TestSqlDriverOpen(t *testing.T) {
 	var err error
-	_, err = sql.Open("fury", "tmp-db")
+	db, err = sql.Open("fury", "tmp-db")
 	if err != nil {
 		t.Error(err)
 		return
@@ -165,6 +171,7 @@ func TestSqlDriverTableCreate(t *testing.T) {
 		t.Error(fmt.Errorf("db not loaded"))
 		return
 	}
+	// todo finish me
 }
 
 // TestSqlDriverInsert

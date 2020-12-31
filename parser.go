@@ -65,7 +65,7 @@ func (p *Parser) scanValueIgnoreWhitespace() (tok Token, lit string) {
 	if tok == WS {
 		tok, lit = p.scanValue()
 	}
-	if Debug {
+	if Verbose >= 2 {
 		fmt.Printf("tok: %+v      lit: %+v\n", tok, lit)
 	}
 	return
@@ -77,7 +77,7 @@ func (p *Parser) scanIgnoreWhitespace() (tok Token, lit string) {
 	if tok == WS {
 		tok, lit = p.scan()
 	}
-	if Debug {
+	if Verbose >= 2 {
 		fmt.Printf("tok: %+v      lit: %+v\n", tok, lit)
 	}
 	return
@@ -91,9 +91,14 @@ func sanityCheckQuery(fields []string, values []string, table *Table) ([]*Column
 	// result columns with data
 	rColumns := []*Column{}
 
-	// match field and columns
-	if len(fields) != len(table.Columns) {
-		return nil, ErrFieldValueNotMatch
+	if Verbose >= 3 {
+		fmt.Printf("fields: (%d) %q\n", len(fields), fields)
+		fmt.Printf("values: (%d) %q\n", len(values), values)
+	}
+
+	// sanity check fields and values length
+	if len(fields) != len(values) {
+		return nil, ErrFieldValueLengthNotMatch
 	}
 	// match value type and column data type
 	for i, field := range fields {
@@ -112,6 +117,10 @@ func sanityCheckQuery(fields []string, values []string, table *Table) ([]*Column
 			if cstr.ColumnName == field {
 				constraint = cstr
 			}
+		}
+
+		if Verbose >= 4 {
+			fmt.Printf("column: %+v\n", column)
 		}
 
 		value := values[i]
@@ -155,7 +164,7 @@ func sanityCheckQuery(fields []string, values []string, table *Table) ([]*Column
 			} else {
 				num, err := strconv.ParseFloat(value, 64)
 				if err != nil {
-					return nil, ErrValueTypeNotInt
+					return nil, ErrValueTypeNotFloat
 				}
 				column.DataFloat = num
 			}
@@ -167,11 +176,7 @@ func sanityCheckQuery(fields []string, values []string, table *Table) ([]*Column
 				column.DataFloat = 0
 				column.DataIsNull = true
 			} else {
-				num, err := strconv.ParseFloat(value, 64)
-				if err != nil {
-					return nil, ErrValueTypeNotInt
-				}
-				column.DataFloat = num
+				column.DataString = value
 			}
 		case ColumnTypeTime:
 			if strings.ToLower(value) == "null" {
