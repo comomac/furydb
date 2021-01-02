@@ -49,7 +49,14 @@ func (c *FuryConn) Query(query string, args []driver.Value) (driver.Rows, error)
 	var res *results
 
 	str := strings.ToUpper(strings.TrimSpace(query))
-	if strings.HasPrefix(str, "INSERT") {
+	if strings.HasPrefix(str, "CREATE") {
+		res, err = c.queryTableCreate(query)
+		if err != nil {
+			return nil, err
+		}
+		return res, nil
+
+	} else if strings.HasPrefix(str, "INSERT") {
 		res, err = c.queryInsert(query)
 		if err != nil {
 			return nil, err

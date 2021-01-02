@@ -20,7 +20,7 @@ const (
 	// 2 func level
 	// 3 block level
 	// 4 loop level
-	Verbose int = 1
+	Verbose int = 4
 )
 
 // various errors

@@ -5,18 +5,8 @@ import (
 	"strings"
 )
 
-// TableCreateStatement represents a SQL CREATE TABLE statement.
-type TableCreateStatement struct {
-	Columns   []string // of individual column
-	Types     []string // of individual column type
-	TableName string
-}
-
-type TableCreateResult struct {
-}
-
 // queryTableCreate executes a SQL CREATE TABLE statement
-func (c *FuryConn) queryTableCreate(query string) (*TableCreateResult, error) {
+func (c *FuryConn) queryTableCreate(query string) (*results, error) {
 	parser := NewParser(strings.NewReader(query))
 	_, err := parser.parseTableCreate()
 	if err != nil {
@@ -25,7 +15,14 @@ func (c *FuryConn) queryTableCreate(query string) (*TableCreateResult, error) {
 
 	// todo finish me
 
-	return nil, nil
+	return nil, fmt.Errorf("implement me")
+}
+
+// TableCreateStatement represents a SQL CREATE TABLE statement.
+type TableCreateStatement struct {
+	Columns   []string // of individual column
+	Types     []string // of individual column type
+	TableName string
 }
 
 // parseTableCreate parses a SQL TABLE CREATE statement
