@@ -26,10 +26,10 @@ func TestCreate(t *testing.T) {
 		{
 			Name: "users",
 			Columns: []*furydb.Column{
-				{
-					Name: "id",
-					Type: furydb.ColumnTypeUUID,
-				},
+				// {
+				// 	Name: "id",
+				// 	Type: furydb.ColumnTypeUUID,
+				// },
 				{
 					Name: "email",
 					Type: furydb.ColumnTypeString,
@@ -166,14 +166,30 @@ func TestSqlDriverOpen(t *testing.T) {
 	}
 }
 
-// TestSqlDriverTableCreate
-func TestSqlDriverTableCreate(t *testing.T) {
-	if db == nil {
-		t.Error(fmt.Errorf("db not loaded"))
-		return
-	}
-	// todo finish me
-}
+// // TestSqlDriverTableCreate
+// func TestSqlDriverTableCreate(t *testing.T) {
+// 	var err error
+// 	if db == nil {
+// 		t.Error(fmt.Errorf("db not loaded"))
+// 		return
+// 	}
+
+// 	query := `
+// 	CREATE TABLE user (
+// 		id uuid,
+// 		email string,
+// 		password string,
+// 		verified bool
+// 	);
+// 	`
+
+// 	// run create table query
+// 	_, err = db.Query(query)
+// 	if err != nil {
+// 		t.Error(err)
+// 		return
+// 	}
+// }
 
 // TestSqlDriverInsert
 func TestSqlDriverInsert(t *testing.T) {
@@ -183,9 +199,13 @@ func TestSqlDriverInsert(t *testing.T) {
 		return
 	}
 
+	// query := `
+	// INSERT INTO users (id,email,password)
+	// VALUES ('0583e443-015a-0b3e-0f19-6bce4dfdd638','bob@example.com','testpass');
+	// `
 	query := `
-	INSERT INTO users (id,email,password)
-	VALUES ('0583e443-015a-0b3e-0f19-6bce4dfdd638','bob@example.com','testpass');
+	INSERT INTO users (email,password)
+	VALUES ('bob@example.com','testpass');
 	`
 
 	// run insert query
@@ -219,7 +239,7 @@ func TestSqlDriverSelect(t *testing.T) {
 
 	var (
 		// id       [16]byte
-		id       string
+		// id       string
 		email    string
 		password string
 		// email    sql.NullString
@@ -227,15 +247,15 @@ func TestSqlDriverSelect(t *testing.T) {
 	)
 	// get results
 	for rows.Next() {
-		if err := rows.Scan(&id, &email, &password); err != nil {
+		if err := rows.Scan(&email, &password); err != nil {
 			t.Error(err)
 			return
 		}
 		// log.Printf("id: %+v   email: %+v   password: %+v\n", id, email, password)
 	}
-	if id != "0583e443-015a-0b3e-0f19-6bce4dfdd638" {
-		t.Error(fmt.Errorf("invalid id"))
-	}
+	// if id != "0583e443-015a-0b3e-0f19-6bce4dfdd638" {
+	// 	t.Error(fmt.Errorf("invalid id"))
+	// }
 	if email != "bob@example.com" {
 		t.Error(fmt.Errorf("invalid email"))
 	}

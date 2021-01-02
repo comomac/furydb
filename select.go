@@ -177,7 +177,7 @@ func scanDirRows(folderpath string, tableName string, columns []string, wheres [
 			}
 		}
 		if len(resCols) != len(columns) {
-			fmt.Printf("invalid result column length - %s\n", filepath)
+			fmt.Printf("invalid result column length - %s   %q vs %+v\n", filepath, resCols, columns)
 			continue
 		}
 		row.Columns = resCols

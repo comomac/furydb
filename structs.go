@@ -110,14 +110,14 @@ func (r *results) Columns() []string {
 
 // Next implements driver.Rows
 func (r *results) Next(dest []driver.Value) error {
-	// eod of record
-	if r.cursor >= len(r.rows) {
-		return io.EOF
-	}
-
 	if Verbose >= 2 {
 		fmt.Printf("next (%d) rows %+v\n", r.cursor, r.rows)
 		fmt.Printf("next (%d) []driver.Value %+v %+v\n", r.cursor, r.Columns(), dest)
+	}
+
+	// eod of record
+	if r.cursor >= len(r.rows) {
+		return io.EOF
 	}
 
 	constraints := r.tableSchema.Constraints
