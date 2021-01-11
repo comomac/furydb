@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/comomac/furydb"
@@ -13,6 +14,11 @@ var (
 	db  *sql.DB
 	fdb *furydb.Database
 )
+
+func init() {
+	// clean up before starting
+	os.RemoveAll("tmp-db")
+}
 
 // TestCreate db, written this before the parser is made
 func TestCreate(t *testing.T) {
@@ -26,10 +32,10 @@ func TestCreate(t *testing.T) {
 		{
 			Name: "users",
 			Columns: []*furydb.Column{
-				// {
-				// 	Name: "id",
-				// 	Type: furydb.ColumnTypeUUID,
-				// },
+				{
+					Name: "id",
+					Type: furydb.ColumnTypeUUID,
+				},
 				{
 					Name: "email",
 					Type: furydb.ColumnTypeString,
@@ -225,7 +231,7 @@ func TestSqlDriverSelect(t *testing.T) {
 	}
 
 	query := `
-	SELECT (id,email,password)
+	SELECT (email,password)
 	FROM users;
 	`
 
@@ -238,7 +244,6 @@ func TestSqlDriverSelect(t *testing.T) {
 	defer rows.Close()
 
 	var (
-		// id       [16]byte
 		// id       string
 		email    string
 		password string
@@ -246,24 +251,18 @@ func TestSqlDriverSelect(t *testing.T) {
 		// password sql.NullString
 	)
 	// get results
+	var found bool
 	for rows.Next() {
 		if err := rows.Scan(&email, &password); err != nil {
 			t.Error(err)
 			return
 		}
 		// log.Printf("id: %+v   email: %+v   password: %+v\n", id, email, password)
+		if email == "bob@example.com" && password == "testpass" {
+			found = true
+		}
 	}
-	// if id != "0583e443-015a-0b3e-0f19-6bce4dfdd638" {
-	// 	t.Error(fmt.Errorf("invalid id"))
-	// }
-	if email != "bob@example.com" {
-		t.Error(fmt.Errorf("invalid email"))
+	if !found {
+		t.Error(fmt.Errorf("data not found"))
 	}
-	if password != "testpass" {
-		t.Error(fmt.Errorf("invalid password"))
-	}
-	// if !rows.NextResultSet() {
-	// 	t.Error(fmt.Errorf("expected more result sets: %v", rows.Err()))
-	// 	return
-	// }
 }
