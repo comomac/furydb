@@ -63,6 +63,18 @@ func (c *FuryConn) queryInsert(query string) (*results, error) {
 		if err != nil {
 			return nil, err
 		}
+		idBin, err := UUIDStrToBin(id)
+		if err != nil {
+			return nil, err
+		}
+		idCol := &Column{
+			Name:        "id",
+			Type:        ColumnTypeUUID,
+			DataIsNull:  false, // todo false for now
+			DataIsValid: true,  // todo valid for now
+			DataUUID:    idBin,
+		}
+		columns = append(columns, idCol)
 	}
 
 	// convert to row
