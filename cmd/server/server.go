@@ -20,7 +20,7 @@ var indexHTML = `
 <body>
 <div><h1>Users:</h1></div>
 <div>
-	<form method="get" action="/api/add_user">
+	<form method="post" action="/add">
 		email: <input name="email">
 		password: <input name="password">
 		<input type="submit" value="add">
@@ -45,6 +45,16 @@ var indexHTML = `
 <html>
 `
 
+var submitted = `<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="refresh" content="2; url='/'" />
+</head>
+<body>
+	<p>Added, click <a href="/">here</a> to return</p>
+</body>
+</html>`
+
 func init() {
 	tplIndexHTML = template.Must(template.New("indexHtml").Parse(indexHTML))
 }
@@ -56,8 +66,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	http.HandleFunc("/", handlerIndex)
-	http.HandleFunc("/api/add_user", handlerAddUser)
+	http.HandleFunc("/", handlerList)
+	http.HandleFunc("/add", handlerAdd)
 
 	fmt.Printf("Starting server at port 8080\n")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
@@ -66,17 +76,18 @@ func main() {
 }
 
 type results struct {
-	Users []*User
+	Users []*user
 }
-type User struct {
+type user struct {
 	ID       string
 	Email    string
 	Password string
 }
 
-func handlerIndex(w http.ResponseWriter, r *http.Request) {
+func handlerList(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
-		http.Error(w, "Method is not supported.", http.StatusNotFound)
+		http.Error(w, "Method is not supported.", http.StatusMethodNotAllowed)
+		return
 	}
 
 	query := `
@@ -100,14 +111,18 @@ func handlerIndex(w http.ResponseWriter, r *http.Request) {
 			email    string
 			password string
 		)
-		if err := rows.Scan(&id, &email, &password); err != nil {
-			res.Users = append(res.Users, &User{
-				ID:       id,
-				Email:    email,
-				Password: password,
-			})
-			break
+		err := rows.Scan(&id, &email, &password)
+		if err != nil {
+			log.Println("Error rows.Scan() failed", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
+
+		res.Users = append(res.Users, &user{
+			ID:       id,
+			Email:    email,
+			Password: password,
+		})
 	}
 
 	buf := bytes.Buffer{}
@@ -120,20 +135,28 @@ func handlerIndex(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, buf.String())
 }
 
-func handlerAddUser(w http.ResponseWriter, r *http.Request) {
+func handlerAdd(w http.ResponseWriter, r *http.Request) {
 	var err error
-	if r.Method != "GET" {
-		http.Error(w, "Method is not supported.", http.StatusNotFound)
+	if r.Method != "POST" {
+		http.Error(w, "Method is not supported.", http.StatusMethodNotAllowed)
+		return
 	}
 
-	email := r.URL.Query().Get("email")
-	password := r.URL.Query().Get("password")
+	err = r.ParseForm()
+	if err != nil {
+		http.Error(w, "Process form failed", http.StatusInternalServerError)
+		return
+	}
+
+	email := r.PostForm.Get("email")
+	password := r.PostForm.Get("password")
 
 	_, err = db.Query(`INSERT INTO users (email,password)
 	VALUES ('` + email + `','` + password + `');`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	fmt.Fprintf(w, "added")
+	fmt.Fprintf(w, submitted)
 }
